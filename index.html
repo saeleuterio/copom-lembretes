@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Lembretes - Passagem e Serviço</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-image left">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <div class="header-content">
+                <h1>PASSAGEM E SERVIÇO</h1>
+                <p>ANOTAÇÕES</p>
+            </div>
+            <div class="header-image right">
+                <i class="fas fa-sticky-note"></i>
+            </div>
+        </header>
+
+        <!-- Formulário para adicionar lembretes -->
+        <div class="add-note-form">
+            <div class="form-group">
+                <label for="authorName">
+                    <i class="fas fa-user"></i>
+                    Nome do responsável
+                </label>
+                <input type="text" id="authorName" placeholder="Digite seu nome...">
+            </div>
+            
+            <div class="form-group">
+                <label for="noteTitle">
+                    <i class="fas fa-heading"></i>
+                    Título do lembrete
+                </label>
+                <input type="text" id="noteTitle" placeholder="Digite o título...">
+            </div>
+            
+            <div class="form-group">
+                <label for="noteContent">
+                    <i class="fas fa-edit"></i>
+                    Conteúdo
+                </label>
+                <textarea id="noteContent" placeholder="Digite o conteúdo do lembrete..." rows="3"></textarea>
+            </div>
+            
+            <button onclick="addNote()" class="add-btn">
+                <i class="fas fa-plus"></i>
+                Adicionar Lembrete
+            </button>
+        </div>
+
+        <!-- Container dos lembretes -->
+        <div class="notes-container" id="notesContainer">
+            <!-- Os lembretes serão inseridos aqui dinamicamente -->
+        </div>
+    </div>
+
+    <!-- Modal para edição -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h2><i class="fas fa-edit"></i> Editar Lembrete</h2>
+            
+            <div class="form-group">
+                <label for="editAuthor">Nome do responsável</label>
+                <input type="text" id="editAuthor">
+            </div>
+            
+            <div class="form-group">
+                <label for="editTitle">Título</label>
+                <input type="text" id="editTitle">
+            </div>
+            
+            <div class="form-group">
+                <label for="editContent">Conteúdo</label>
+                <textarea id="editContent" rows="4"></textarea>
+            </div>
+            
+            <div class="modal-actions">
+                <button onclick="saveEdit()" class="save-btn">
+                    <i class="fas fa-save"></i>
+                    Salvar
+                </button>
+                <button onclick="closeEditModal()" class="cancel-btn">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
