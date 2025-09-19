@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Lembretes - Passagem e Serviço</title>
+    <title>ANOTAÇÕES - COPOM</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -11,19 +11,17 @@
     <div class="container">
         <!-- Header -->
         <header class="header">
-            <div class="header-image left">
-                <!-- COLOQUE SUA IMAGEM AQUI -->
-                <img src="./img/copom.png" alt="Imagem Esquerda">
-                <!-- Exemplo: <img src="./images/logo-left.png" alt="Logo Esquerda"> -->
-            </div>
             <div class="header-content">
-                <h1>PASSAGEM E SERVIÇO</h1>
-                <p>ANOTAÇÕES</p>
-            </div>
-            <div class="header-image right">
-                <!-- COLOQUE SUA IMAGEM AQUI -->
-                <img src="./img/copom.png" alt="Imagem Direita">
-                <!-- Exemplo: <img src="./images/logo-right.png" alt="Logo Direita"> -->
+                <!-- COLOQUE SUA IMAGEM ESQUERDA AQUI -->
+                <img src="./img/copom.png" alt="Logo COPOM" class="header-logo left">
+                
+                <div class="header-text">
+                    <h1>ANOTAÇÕES E LEMBRETES</h1>
+                    <h1>COPOM CPI-10</h1>
+                </div>
+                
+                <!-- COLOQUE SUA IMAGEM DIREITA AQUI -->
+                <img src="./img/copom.png" alt="Logo COPOM" class="header-logo right">
             </div>
         </header>
 
@@ -34,7 +32,7 @@
                     <i class="fas fa-user"></i>
                     Nome do responsável
                 </label>
-                <input type="text" id="authorName" placeholder="Digite seu nome...">
+                <input type="text" id="authorName" placeholder="Digite seu nome..." autocomplete="name">
             </div>
             
             <div class="form-group">
@@ -42,7 +40,7 @@
                     <i class="fas fa-heading"></i>
                     Título do lembrete
                 </label>
-                <input type="text" id="noteTitle" placeholder="Digite o título...">
+                <input type="text" id="noteTitle" placeholder="Digite o título..." autocomplete="off">
             </div>
             
             <div class="form-group">
@@ -50,10 +48,10 @@
                     <i class="fas fa-edit"></i>
                     Conteúdo
                 </label>
-                <textarea id="noteContent" placeholder="Digite o conteúdo do lembrete..." rows="3"></textarea>
+                <textarea id="noteContent" placeholder="Digite o conteúdo do lembrete..." rows="3" autocomplete="off"></textarea>
             </div>
             
-            <button onclick="addNote()" class="add-btn">
+            <button type="button" onclick="addNote()" class="add-btn">
                 <i class="fas fa-plus"></i>
                 Adicionar Lembrete
             </button>
@@ -66,32 +64,35 @@
     </div>
 
     <!-- Modal para edição -->
-    <div id="editModal" class="modal">
+    <div id="editModal" class="modal" role="dialog" aria-labelledby="editModalTitle" aria-hidden="true">
         <div class="modal-content">
-            <span class="close" onclick="closeEditModal()">&times;</span>
-            <h2><i class="fas fa-edit"></i> Editar Lembrete</h2>
+            <span class="close" onclick="closeEditModal()" aria-label="Fechar modal">&times;</span>
+            <h2 id="editModalTitle">
+                <i class="fas fa-edit"></i> 
+                Editar Lembrete
+            </h2>
             
             <div class="form-group">
                 <label for="editAuthor">Nome do responsável</label>
-                <input type="text" id="editAuthor">
+                <input type="text" id="editAuthor" autocomplete="name">
             </div>
             
             <div class="form-group">
                 <label for="editTitle">Título</label>
-                <input type="text" id="editTitle">
+                <input type="text" id="editTitle" autocomplete="off">
             </div>
             
             <div class="form-group">
                 <label for="editContent">Conteúdo</label>
-                <textarea id="editContent" rows="4"></textarea>
+                <textarea id="editContent" rows="4" autocomplete="off"></textarea>
             </div>
             
             <div class="modal-actions">
-                <button onclick="saveEdit()" class="save-btn">
+                <button type="button" onclick="saveEdit()" class="save-btn">
                     <i class="fas fa-save"></i>
                     Salvar
                 </button>
-                <button onclick="closeEditModal()" class="cancel-btn">
+                <button type="button" onclick="closeEditModal()" class="cancel-btn">
                     <i class="fas fa-times"></i>
                     Cancelar
                 </button>
