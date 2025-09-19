@@ -428,6 +428,16 @@ body {
     line-height: 1.6;
 }
 
+/* ===== Footer ===== */
+.footer {
+    color: #ffffff;
+    margin: 24px auto 40px;
+    display: flex;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
 /* Responsividade */
 @media (max-width: 768px) {
     .container {
