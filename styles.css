@@ -6,7 +6,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #2d5016 0%, #4a7c59 100%);
     min-height: 100vh;
     color: #333;
 }
@@ -36,7 +36,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(45deg, transparent 30%, rgba(102, 126, 234, 0.05) 50%, transparent 70%);
+    background: linear-gradient(45deg, transparent 30%, rgba(45, 80, 22, 0.05) 50%, transparent 70%);
     pointer-events: none;
 }
 
@@ -73,7 +73,7 @@ body {
 .header-text h1 {
     font-size: 2.5rem;
     font-weight: 700;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #2d5016, #4a7c59);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -113,7 +113,7 @@ body {
 
 .form-group label i {
     margin-right: 8px;
-    color: #667eea;
+    color: #2d5016;
     width: 20px;
 }
 
@@ -131,8 +131,8 @@ body {
 .form-group input:focus,
 .form-group textarea:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: #4a7c59;
+    box-shadow: 0 0 0 3px rgba(74, 124, 89, 0.1);
     background: rgba(255, 255, 255, 1);
 }
 
@@ -142,7 +142,7 @@ body {
 }
 
 .add-btn {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #2d5016, #4a7c59);
     color: white;
     border: none;
     padding: 15px 30px;
@@ -154,12 +154,12 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 15px rgba(45, 80, 22, 0.3);
 }
 
 .add-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 6px 20px rgba(45, 80, 22, 0.4);
 }
 
 .add-btn:active {
@@ -197,7 +197,7 @@ body {
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #2d5016, #4a7c59);
 }
 
 .note-card:hover {
@@ -214,7 +214,7 @@ body {
 
 .note-info h3 {
     color: #333;
-    font-size: 1.2rem;
+    font-size: 1.5rem;
     font-weight: 600;
     margin-bottom: 5px;
     line-height: 1.3;
@@ -222,12 +222,12 @@ body {
 
 .note-author {
     color: #666;
-    font-size: 0.9rem;
+    font-size: 1rem;
     font-weight: 500;
 }
 
 .note-author i {
-    color: #667eea;
+    color: #2d5016;
     margin-right: 5px;
 }
 
@@ -251,12 +251,12 @@ body {
 }
 
 .edit-btn {
-    background: rgba(52, 152, 219, 0.1);
-    color: #3498db;
+    background: rgba(45, 80, 22, 0.1);
+    color: #2d5016;
 }
 
 .edit-btn:hover {
-    background: rgba(52, 152, 219, 0.2);
+    background: rgba(45, 80, 22, 0.2);
     transform: scale(1.1);
 }
 
@@ -273,7 +273,7 @@ body {
 .note-content {
     color: #444;
     line-height: 1.6;
-    font-size: 1rem;
+    font-size: 1.1rem;
 }
 
 .note-date {
@@ -287,7 +287,7 @@ body {
 
 .note-date i {
     margin-right: 5px;
-    color: #667eea;
+    color: #4a7c59;
 }
 
 /* Modal */
@@ -336,7 +336,7 @@ body {
 }
 
 .modal-content h2 i {
-    color: #667eea;
+    color: #2d5016;
 }
 
 .close {
@@ -361,7 +361,7 @@ body {
 }
 
 .save-btn {
-    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    background: linear-gradient(135deg, #2d5016, #4a7c59);
     color: white;
     border: none;
     padding: 12px 24px;
@@ -378,7 +378,7 @@ body {
 
 .save-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(39, 174, 96, 0.3);
+    box-shadow: 0 6px 20px rgba(45, 80, 22, 0.3);
 }
 
 .cancel-btn {
