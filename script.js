@@ -1,27 +1,15 @@
 // script.js
-import { db } from './firebase-config.js';
-import { 
-    collection, 
-    addDoc, 
-    getDocs, 
-    doc, 
-    updateDoc, 
-    deleteDoc, 
-    onSnapshot,
-    orderBy,
-    query,
-    serverTimestamp 
-} from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { supabase } from './supabase-config.js';
 
 // Variáveis globais
 let editingNoteId = null;
-let unsubscribe = null;
+let realtimeChannel = null;
 
 // Função para formatar data
-function formatDate(timestamp) {
-    if (!timestamp) return 'Data inválida';
+function formatDate(dateString) {
+    if (!dateString) return 'Data inválida';
     
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const date = new Date(dateString);
     return new Intl.DateTimeFormat('pt-BR', {
         day: '2-digit',
         month: '2-digit',
@@ -64,14 +52,19 @@ async function addNote() {
     }
 
     try {
-        // Salvar no Firestore
-        await addDoc(collection(db, 'lembretes'), {
-            author: authorName,
-            title: noteTitle,
-            content: noteContent,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp()
-        });
+        // Salvar no Supabase
+        const { data, error } = await supabase
+            .from('lembretes')
+            .insert([
+                {
+                    author: authorName,
+                    title: noteTitle,
+                    content: noteContent
+                }
+            ])
+            .select();
+
+        if (error) throw error;
 
         // Limpar campos
         clearForm();
@@ -95,23 +88,49 @@ function clearForm() {
     document.getElementById('noteContent').value = '';
 }
 
+// Função para carregar lembretes
+async function loadNotes() {
+    try {
+        const { data, error } = await supabase
+            .from('lembretes')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        renderNotes(data || []);
+    } catch (error) {
+        console.error('Erro ao carregar lembretes:', error);
+        showError('Erro ao carregar lembretes');
+    }
+}
+
 // Função para escutar lembretes em tempo real
 function setupRealtimeListener() {
-    const q = query(collection(db, 'lembretes'), orderBy('createdAt', 'desc'));
-    
-    unsubscribe = onSnapshot(q, (snapshot) => {
-        const notes = [];
-        snapshot.forEach((doc) => {
-            notes.push({
-                id: doc.id,
-                ...doc.data()
-            });
-        });
-        renderNotes(notes);
-    }, (error) => {
-        console.error('Erro ao escutar mudanças:', error);
-        showError('Erro na conexão com o banco de dados');
-    });
+    // Remover listener anterior se existir
+    if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+    }
+
+    // Criar novo canal de tempo real
+    realtimeChannel = supabase
+        .channel('lembretes-changes')
+        .on(
+            'postgres_changes',
+            {
+                event: '*',
+                schema: 'public',
+                table: 'lembretes'
+            },
+            (payload) => {
+                console.log('Mudança detectada:', payload);
+                loadNotes(); // Recarregar lembretes quando houver mudanças
+            }
+        )
+        .subscribe();
+
+    // Carregar lembretes inicialmente
+    loadNotes();
 }
 
 // Função para renderizar lembretes
@@ -124,7 +143,7 @@ function renderNotes(notes) {
                 <i class="fas fa-sticky-note"></i>
                 <h3>Nenhum lembrete ainda</h3>
                 <p>Adicione seu primeiro lembrete usando o formulário acima.<br>
-                Os dados serão salvos permanentemente no Firebase!</p>
+                Os dados serão salvos permanentemente no Supabase!</p>
             </div>
         `;
         return;
@@ -154,9 +173,9 @@ function renderNotes(notes) {
             </div>
             <div class="note-date">
                 <i class="fas fa-clock"></i>
-                Criado em: ${formatDate(note.createdAt)}
-                ${note.updatedAt && note.updatedAt !== note.createdAt ? 
-                    `<br><i class="fas fa-edit"></i> Editado em: ${formatDate(note.updatedAt)}` : ''}
+                Criado em: ${formatDate(note.created_at)}
+                ${note.updated_at && note.updated_at !== note.created_at ? 
+                    `<br><i class="fas fa-edit"></i> Editado em: ${formatDate(note.updated_at)}` : ''}
             </div>
         </div>
     `).join('');
@@ -172,22 +191,20 @@ function escapeHtml(text) {
 // Função para abrir modal de edição
 async function openEditModal(noteId) {
     try {
-        const noteDoc = await getDocs(query(collection(db, 'lembretes')));
-        let noteData = null;
-        
-        noteDoc.forEach((doc) => {
-            if (doc.id === noteId) {
-                noteData = { id: doc.id, ...doc.data() };
-            }
-        });
+        const { data, error } = await supabase
+            .from('lembretes')
+            .select('*')
+            .eq('id', noteId)
+            .single();
 
-        if (!noteData) return;
+        if (error) throw error;
+        if (!data) return;
 
         editingNoteId = noteId;
         
-        document.getElementById('editAuthor').value = noteData.author;
-        document.getElementById('editTitle').value = noteData.title;
-        document.getElementById('editContent').value = noteData.content;
+        document.getElementById('editAuthor').value = data.author;
+        document.getElementById('editTitle').value = data.title;
+        document.getElementById('editContent').value = data.content;
         
         document.getElementById('editModal').style.display = 'block';
         document.body.style.overflow = 'hidden';
@@ -226,13 +243,18 @@ async function saveEdit() {
     }
 
     try {
-        // Atualizar no Firestore
-        await updateDoc(doc(db, 'lembretes', editingNoteId), {
-            author: editAuthor,
-            title: editTitle,
-            content: editContent,
-            updatedAt: serverTimestamp()
-        });
+        // Atualizar no Supabase
+        const { error } = await supabase
+            .from('lembretes')
+            .update({
+                author: editAuthor,
+                title: editTitle,
+                content: editContent,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', editingNoteId);
+
+        if (error) throw error;
 
         closeEditModal();
         showSuccess('Lembrete atualizado com sucesso!');
@@ -257,7 +279,13 @@ async function deleteNote(noteId) {
     if (!confirmDelete) return;
 
     try {
-        await deleteDoc(doc(db, 'lembretes', noteId));
+        const { error } = await supabase
+            .from('lembretes')
+            .delete()
+            .eq('id', noteId);
+
+        if (error) throw error;
+
         showSuccess('Lembrete excluído com sucesso!');
     } catch (error) {
         console.error('Erro ao excluir lembrete:', error);
@@ -369,7 +397,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Limpar listener ao sair da página
 window.addEventListener('beforeunload', () => {
-    if (unsubscribe) {
-        unsubscribe();
+    if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
     }
 });
