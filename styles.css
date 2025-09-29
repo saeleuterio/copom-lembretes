@@ -438,6 +438,83 @@ body {
     font-weight: 700;
 }
 
+/* Status de conexão */
+.connection-status {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.3s ease;
+}
+
+.connection-status.online {
+    background: rgba(45, 80, 22, 0.9);
+    color: white;
+}
+
+.connection-status.offline {
+    background: rgba(231, 76, 60, 0.9);
+    color: white;
+}
+
+/* Loading state */
+.loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+    grid-column: 1 / -1;
+}
+
+.loading i {
+    font-size: 2rem;
+    color: #4a7c59;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.loading span {
+    font-size: 1.1rem;
+    color: #666;
+}
+
+/* Estados dos botões */
+.add-btn:disabled,
+.save-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Notificações */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Responsividade do status */
+@media (max-width: 768px) {
+    .connection-status {
+        position: relative;
+        top: auto;
+        left: auto;
+        margin-bottom: 10px;
+        justify-content: center;
+    }
+}
+
 /* Responsividade */
 @media (max-width: 768px) {
     .container {

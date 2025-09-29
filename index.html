@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ANOTAÇÕES - COPOM</title>
-    <link rel="icon" href="./img/favicon.png" type="image/png" />
+    <title>Sistema de Lembretes - Passagem e Serviço</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -13,20 +12,22 @@
         <!-- Header -->
         <header class="header">
             <div class="header-content">
-                <!-- COLOQUE SUA IMAGEM ESQUERDA AQUI -->
                 <img src="./img/copom.png" alt="Logo COPOM" class="header-logo left">
-                
                 <div class="header-text">
-                    <h1>ANOTAÇÕES E LEMBRETES</h1>
-                    <h1>COPOM CPI-10</h1>
+                    <h1>PASSAGEM E SERVIÇO</h1>
+                    <p>ANOTAÇÕES</p>
                 </div>
-                
-                <!-- COLOQUE SUA IMAGEM DIREITA AQUI -->
                 <img src="./img/copom.png" alt="Logo COPOM" class="header-logo right">
             </div>
         </header>
 
-        <!-- Formulário para adicionar lembretes -->
+        <!-- Status de conexão -->
+        <div id="connectionStatus" class="connection-status">
+            <i class="fas fa-wifi"></i>
+            <span>Conectado ao Firebase</span>
+        </div>
+
+        <!-- Formulário -->
         <div class="add-note-form">
             <div class="form-group">
                 <label for="authorName">
@@ -52,7 +53,7 @@
                 <textarea id="noteContent" placeholder="Digite o conteúdo do lembrete..." rows="3" autocomplete="off"></textarea>
             </div>
             
-            <button type="button" onclick="addNote()" class="add-btn">
+            <button type="button" onclick="addNote()" class="add-btn" id="addBtn">
                 <i class="fas fa-plus"></i>
                 Adicionar Lembrete
             </button>
@@ -60,7 +61,10 @@
 
         <!-- Container dos lembretes -->
         <div class="notes-container" id="notesContainer">
-            <!-- Os lembretes serão inseridos aqui dinamicamente -->
+            <div class="loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>Carregando lembretes...</span>
+            </div>
         </div>
     </div>
 
@@ -89,7 +93,7 @@
             </div>
             
             <div class="modal-actions">
-                <button type="button" onclick="saveEdit()" class="save-btn">
+                <button type="button" onclick="saveEdit()" class="save-btn" id="saveBtn">
                     <i class="fas fa-save"></i>
                     Salvar
                 </button>
@@ -101,12 +105,8 @@
         </div>
     </div>
 
-    <footer class="container footer">
-        <small class="muted">
-            © 2025 | Desenvolvido por Saulo Eleutério
-        </small>
-    </footer>
-
-    <script src="script.js"></script>
+    <!-- Firebase SDKs -->
+    <script type="module" src="firebase-config.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>

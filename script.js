@@ -1,14 +1,27 @@
-// Array para armazenar os lembretes
-let notes = [];
-let editingNoteId = null;
+// script.js
+import { db } from './firebase-config.js';
+import { 
+    collection, 
+    addDoc, 
+    getDocs, 
+    doc, 
+    updateDoc, 
+    deleteDoc, 
+    onSnapshot,
+    orderBy,
+    query,
+    serverTimestamp 
+} from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-// Função para gerar ID único
-function generateId() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
-}
+// Variáveis globais
+let editingNoteId = null;
+let unsubscribe = null;
 
 // Função para formatar data
-function formatDate(date) {
+function formatDate(timestamp) {
+    if (!timestamp) return 'Data inválida';
+    
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return new Intl.DateTimeFormat('pt-BR', {
         day: '2-digit',
         month: '2-digit',
@@ -19,10 +32,11 @@ function formatDate(date) {
 }
 
 // Função para adicionar novo lembrete
-function addNote() {
+async function addNote() {
     const authorName = document.getElementById('authorName').value.trim();
     const noteTitle = document.getElementById('noteTitle').value.trim();
     const noteContent = document.getElementById('noteContent').value.trim();
+    const addBtn = document.getElementById('addBtn');
 
     // Validação dos campos
     if (!authorName) {
@@ -43,27 +57,35 @@ function addNote() {
         return;
     }
 
-    // Criar novo lembrete
-    const newNote = {
-        id: generateId(),
-        author: authorName,
-        title: noteTitle,
-        content: noteContent,
-        createdAt: new Date(),
-        updatedAt: new Date()
-    };
+    // Desabilitar botão durante salvamento
+    if (addBtn) {
+        addBtn.disabled = true;
+        addBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+    }
 
-    // Adicionar ao array
-    notes.unshift(newNote); // unshift para adicionar no início
+    try {
+        // Salvar no Firestore
+        await addDoc(collection(db, 'lembretes'), {
+            author: authorName,
+            title: noteTitle,
+            content: noteContent,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        });
 
-    // Limpar campos
-    clearForm();
-
-    // Renderizar lembretes
-    renderNotes();
-
-    // Mostrar mensagem de sucesso
-    showSuccess('Lembrete adicionado com sucesso!');
+        // Limpar campos
+        clearForm();
+        showSuccess('Lembrete adicionado com sucesso!');
+    } catch (error) {
+        console.error('Erro ao salvar lembrete:', error);
+        showError('Erro ao salvar lembrete. Tente novamente.');
+    } finally {
+        // Reabilitar botão
+        if (addBtn) {
+            addBtn.disabled = false;
+            addBtn.innerHTML = '<i class="fas fa-plus"></i> Adicionar Lembrete';
+        }
+    }
 }
 
 // Função para limpar formulário
@@ -73,8 +95,27 @@ function clearForm() {
     document.getElementById('noteContent').value = '';
 }
 
+// Função para escutar lembretes em tempo real
+function setupRealtimeListener() {
+    const q = query(collection(db, 'lembretes'), orderBy('createdAt', 'desc'));
+    
+    unsubscribe = onSnapshot(q, (snapshot) => {
+        const notes = [];
+        snapshot.forEach((doc) => {
+            notes.push({
+                id: doc.id,
+                ...doc.data()
+            });
+        });
+        renderNotes(notes);
+    }, (error) => {
+        console.error('Erro ao escutar mudanças:', error);
+        showError('Erro na conexão com o banco de dados');
+    });
+}
+
 // Função para renderizar lembretes
-function renderNotes() {
+function renderNotes(notes) {
     const container = document.getElementById('notesContainer');
 
     if (notes.length === 0) {
@@ -83,7 +124,7 @@ function renderNotes() {
                 <i class="fas fa-sticky-note"></i>
                 <h3>Nenhum lembrete ainda</h3>
                 <p>Adicione seu primeiro lembrete usando o formulário acima.<br>
-                Organize suas tarefas e mantenha tudo sob controle!</p>
+                Os dados serão salvos permanentemente no Firebase!</p>
             </div>
         `;
         return;
@@ -114,7 +155,7 @@ function renderNotes() {
             <div class="note-date">
                 <i class="fas fa-clock"></i>
                 Criado em: ${formatDate(note.createdAt)}
-                ${note.updatedAt.getTime() !== note.createdAt.getTime() ? 
+                ${note.updatedAt && note.updatedAt !== note.createdAt ? 
                     `<br><i class="fas fa-edit"></i> Editado em: ${formatDate(note.updatedAt)}` : ''}
             </div>
         </div>
@@ -129,34 +170,48 @@ function escapeHtml(text) {
 }
 
 // Função para abrir modal de edição
-function openEditModal(noteId) {
-    const note = notes.find(n => n.id === noteId);
-    if (!note) return;
+async function openEditModal(noteId) {
+    try {
+        const noteDoc = await getDocs(query(collection(db, 'lembretes')));
+        let noteData = null;
+        
+        noteDoc.forEach((doc) => {
+            if (doc.id === noteId) {
+                noteData = { id: doc.id, ...doc.data() };
+            }
+        });
 
-    editingNoteId = noteId;
-    
-    document.getElementById('editAuthor').value = note.author;
-    document.getElementById('editTitle').value = note.title;
-    document.getElementById('editContent').value = note.content;
-    
-    document.getElementById('editModal').style.display = 'block';
-    document.body.style.overflow = 'hidden'; // Prevenir scroll do body
+        if (!noteData) return;
+
+        editingNoteId = noteId;
+        
+        document.getElementById('editAuthor').value = noteData.author;
+        document.getElementById('editTitle').value = noteData.title;
+        document.getElementById('editContent').value = noteData.content;
+        
+        document.getElementById('editModal').style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    } catch (error) {
+        console.error('Erro ao abrir modal de edição:', error);
+        showError('Erro ao carregar dados do lembrete');
+    }
 }
 
 // Função para fechar modal de edição
 function closeEditModal() {
     document.getElementById('editModal').style.display = 'none';
-    document.body.style.overflow = 'auto'; // Restaurar scroll do body
+    document.body.style.overflow = 'auto';
     editingNoteId = null;
 }
 
 // Função para salvar edição
-function saveEdit() {
+async function saveEdit() {
     if (!editingNoteId) return;
 
     const editAuthor = document.getElementById('editAuthor').value.trim();
     const editTitle = document.getElementById('editTitle').value.trim();
     const editContent = document.getElementById('editContent').value.trim();
+    const saveBtn = document.getElementById('saveBtn');
 
     // Validação
     if (!editAuthor || !editTitle || !editContent) {
@@ -164,101 +219,125 @@ function saveEdit() {
         return;
     }
 
-    // Encontrar e atualizar o lembrete
-    const noteIndex = notes.findIndex(n => n.id === editingNoteId);
-    if (noteIndex !== -1) {
-        notes[noteIndex].author = editAuthor;
-        notes[noteIndex].title = editTitle;
-        notes[noteIndex].content = editContent;
-        notes[noteIndex].updatedAt = new Date();
-        
-        renderNotes();
+    // Desabilitar botão durante salvamento
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+    }
+
+    try {
+        // Atualizar no Firestore
+        await updateDoc(doc(db, 'lembretes', editingNoteId), {
+            author: editAuthor,
+            title: editTitle,
+            content: editContent,
+            updatedAt: serverTimestamp()
+        });
+
         closeEditModal();
         showSuccess('Lembrete atualizado com sucesso!');
+    } catch (error) {
+        console.error('Erro ao atualizar lembrete:', error);
+        showError('Erro ao atualizar lembrete. Tente novamente.');
+    } finally {
+        // Reabilitar botão
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> Salvar';
+        }
     }
 }
 
 // Função para deletar lembrete
-function deleteNote(noteId) {
-    const note = notes.find(n => n.id === noteId);
-    if (!note) return;
-
+async function deleteNote(noteId) {
     const confirmDelete = confirm(
-        `Tem certeza que deseja excluir o lembrete "${note.title}"?\n\nEsta ação não pode ser desfeita.`
+        'Tem certeza que deseja excluir este lembrete?\n\nEsta ação não pode ser desfeita.'
     );
 
-    if (confirmDelete) {
-        notes = notes.filter(n => n.id !== noteId);
-        renderNotes();
+    if (!confirmDelete) return;
+
+    try {
+        await deleteDoc(doc(db, 'lembretes', noteId));
         showSuccess('Lembrete excluído com sucesso!');
+    } catch (error) {
+        console.error('Erro ao excluir lembrete:', error);
+        showError('Erro ao excluir lembrete. Tente novamente.');
     }
 }
 
 // Função para mostrar mensagem de sucesso
 function showSuccess(message) {
+    showNotification(message, 'success');
+}
+
+// Função para mostrar mensagem de erro
+function showError(message) {
+    showNotification(message, 'error');
+}
+
+// Função para mostrar notificações
+function showNotification(message, type = 'success') {
     // Remover notificação anterior se existir
-    const existingNotification = document.querySelector('.success-notification');
+    const existingNotification = document.querySelector('.notification');
     if (existingNotification) {
         existingNotification.remove();
     }
 
     // Criar nova notificação
     const notification = document.createElement('div');
-    notification.className = 'success-notification';
+    notification.className = `notification ${type}`;
     notification.innerHTML = `
-        <i class="fas fa-check-circle"></i>
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
         ${message}
     `;
     
     // Estilos da notificação
+    const bgColor = type === 'success' 
+        ? 'linear-gradient(135deg, #2d5016, #4a7c59)'
+        : 'linear-gradient(135deg, #c0392b, #e74c3c)';
+    
     notification.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
-        background: linear-gradient(135deg, #27ae60, #2ecc71);
+        background: ${bgColor};
         color: white;
         padding: 15px 20px;
         border-radius: 10px;
-        box-shadow: 0 4px 20px rgba(39, 174, 96, 0.3);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         z-index: 2000;
         font-weight: 600;
         animation: slideInRight 0.3s ease;
         display: flex;
         align-items: center;
         gap: 10px;
+        max-width: 300px;
     `;
-
-    // Adicionar animação CSS
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-    `;
-    document.head.appendChild(style);
 
     document.body.appendChild(notification);
 
-    // Remover após 3 segundos
+    // Remover após 4 segundos
     setTimeout(() => {
-        notification.style.animation = 'slideInRight 0.3s ease reverse';
-        setTimeout(() => {
-            notification.remove();
-        }, 300);
-    }, 3000);
+        if (notification.parentNode) {
+            notification.style.animation = 'slideInRight 0.3s ease reverse';
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }
+    }, 4000);
 }
+
+// Tornar funções globais para uso nos botões HTML
+window.addNote = addNote;
+window.openEditModal = openEditModal;
+window.closeEditModal = closeEditModal;
+window.saveEdit = saveEdit;
+window.deleteNote = deleteNote;
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
-    // Renderizar lembretes iniciais (vazio)
-    renderNotes();
+    // Iniciar listener em tempo real
+    setupRealtimeListener();
 
     // Enter no formulário
     document.addEventListener('keypress', function(e) {
@@ -268,18 +347,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Fechar modal ao clicar fora
-    document.getElementById('editModal').addEventListener('click', function(e) {
+    document.getElementById('editModal')?.addEventListener('click', function(e) {
         if (e.target === this) {
-            closeEditModal();
-        }
-    });
-
-    // Enter no modal de edição
-    document.getElementById('editModal').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter' && e.ctrlKey) {
-            saveEdit();
-        }
-        if (e.key === 'Escape') {
             closeEditModal();
         }
     });
@@ -292,24 +361,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Auto-focus no primeiro campo
-    document.getElementById('authorName').focus();
+    const authorField = document.getElementById('authorName');
+    if (authorField) {
+        authorField.focus();
+    }
 });
 
-// Função para exportar dados (funcionalidade extra)
-function exportNotes() {
-    if (notes.length === 0) {
-        alert('Não há lembretes para exportar!');
-        return;
+// Limpar listener ao sair da página
+window.addEventListener('beforeunload', () => {
+    if (unsubscribe) {
+        unsubscribe();
     }
-
-    const dataStr = JSON.stringify(notes, null, 2);
-    const dataBlob = new Blob([dataStr], {type: 'application/json'});
-    const url = URL.createObjectURL(dataBlob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `lembretes_${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    
-    URL.revokeObjectURL(url);
-}
+});
