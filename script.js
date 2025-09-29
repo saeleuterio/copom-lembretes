@@ -68,6 +68,10 @@ async function addNote() {
 
         // Limpar campos
         clearForm();
+        
+        // Recarregar lembretes imediatamente
+        await loadNotes();
+        
         showSuccess('Lembrete adicionado com sucesso!');
     } catch (error) {
         console.error('Erro ao salvar lembrete:', error);
@@ -107,6 +111,9 @@ async function loadNotes() {
 
 // Função para escutar lembretes em tempo real
 function setupRealtimeListener() {
+    // Carregar lembretes inicialmente
+    loadNotes();
+
     // Remover listener anterior se existir
     if (realtimeChannel) {
         supabase.removeChannel(realtimeChannel);
@@ -114,23 +121,49 @@ function setupRealtimeListener() {
 
     // Criar novo canal de tempo real
     realtimeChannel = supabase
-        .channel('lembretes-changes')
+        .channel('public:lembretes')
         .on(
             'postgres_changes',
             {
-                event: '*',
+                event: 'INSERT',
                 schema: 'public',
                 table: 'lembretes'
             },
             (payload) => {
-                console.log('Mudança detectada:', payload);
-                loadNotes(); // Recarregar lembretes quando houver mudanças
+                console.log('Novo lembrete inserido:', payload);
+                loadNotes();
             }
         )
-        .subscribe();
-
-    // Carregar lembretes inicialmente
-    loadNotes();
+        .on(
+            'postgres_changes',
+            {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'lembretes'
+            },
+            (payload) => {
+                console.log('Lembrete atualizado:', payload);
+                loadNotes();
+            }
+        )
+        .on(
+            'postgres_changes',
+            {
+                event: 'DELETE',
+                schema: 'public',
+                table: 'lembretes'
+            },
+            (payload) => {
+                console.log('Lembrete deletado:', payload);
+                loadNotes();
+            }
+        )
+        .subscribe((status) => {
+            console.log('Status do Realtime:', status);
+            if (status === 'SUBSCRIBED') {
+                console.log('✅ Conectado ao Realtime do Supabase');
+            }
+        });
 }
 
 // Função para renderizar lembretes
@@ -257,6 +290,10 @@ async function saveEdit() {
         if (error) throw error;
 
         closeEditModal();
+        
+        // Recarregar lembretes imediatamente
+        await loadNotes();
+        
         showSuccess('Lembrete atualizado com sucesso!');
     } catch (error) {
         console.error('Erro ao atualizar lembrete:', error);
@@ -286,6 +323,9 @@ async function deleteNote(noteId) {
 
         if (error) throw error;
 
+        // Recarregar lembretes imediatamente
+        await loadNotes();
+        
         showSuccess('Lembrete excluído com sucesso!');
     } catch (error) {
         console.error('Erro ao excluir lembrete:', error);
