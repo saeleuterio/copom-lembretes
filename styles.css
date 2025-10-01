@@ -536,13 +536,17 @@ body {
         height: 60px;
     }
     
-    .header-logo.left,
-    .header-logo.right {
-        order: 0;
+    /* CORREÇÃO: Logo em cima e embaixo em telas pequenas */
+    .header-logo.left {
+        order: 1;
     }
     
     .header-text {
-        order: 1;
+        order: 2;
+    }
+    
+    .header-logo.right {
+        order: 3;
     }
     
     .header-text h1 {
