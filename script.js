@@ -4,6 +4,8 @@ import { supabase } from './supabase-config.js';
 // Variáveis globais
 let editingNoteId = null;
 let realtimeChannel = null;
+let draggedElement = null;
+let notes = [];
 
 // Função para formatar data
 function formatDate(dateString) {
@@ -52,6 +54,9 @@ async function addNote() {
     }
 
     try {
+        // Obter maior posição atual
+        const maxPosition = notes.length > 0 ? Math.max(...notes.map(n => n.position || 0)) : -1;
+
         // Salvar no Supabase
         const { data, error } = await supabase
             .from('lembretes')
@@ -59,7 +64,8 @@ async function addNote() {
                 {
                     author: authorName,
                     title: noteTitle,
-                    content: noteContent
+                    content: noteContent,
+                    position: maxPosition + 1
                 }
             ])
             .select();
@@ -98,14 +104,31 @@ async function loadNotes() {
         const { data, error } = await supabase
             .from('lembretes')
             .select('*')
-            .order('created_at', { ascending: false });
+            .order('position', { ascending: true });
 
         if (error) throw error;
 
-        renderNotes(data || []);
+        notes = data || [];
+        renderNotes(notes);
     } catch (error) {
         console.error('Erro ao carregar lembretes:', error);
         showError('Erro ao carregar lembretes');
+    }
+}
+
+// Função para atualizar posições no banco
+async function updatePositions() {
+    try {
+        const updates = notes.map((note, index) => 
+            supabase
+                .from('lembretes')
+                .update({ position: index })
+                .eq('id', note.id)
+        );
+
+        await Promise.all(updates);
+    } catch (error) {
+        console.error('Erro ao atualizar posições:', error);
     }
 }
 
@@ -167,23 +190,29 @@ function setupRealtimeListener() {
 }
 
 // Função para renderizar lembretes
-function renderNotes(notes) {
+function renderNotes(notesData) {
     const container = document.getElementById('notesContainer');
 
-    if (notes.length === 0) {
+    if (notesData.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-sticky-note"></i>
                 <h3>Nenhum lembrete ainda</h3>
                 <p>Adicione seu primeiro lembrete usando o formulário acima.<br>
-                Os dados serão salvos permanentemente no Supabase!</p>
+                Os dados serão salvos permanentemente no Supabase!<br>
+                <strong>Você pode arrastar os cards para reorganizá-los!</strong></p>
             </div>
         `;
         return;
     }
 
-    container.innerHTML = notes.map(note => `
-        <div class="note-card" data-note-id="${note.id}">
+    container.innerHTML = notesData.map(note => `
+        <div class="note-card" 
+             data-note-id="${note.id}" 
+             draggable="true">
+            <div class="drag-handle">
+                <i class="fas fa-grip-vertical"></i>
+            </div>
             <div class="note-header">
                 <div class="note-info">
                     <h3>${escapeHtml(note.title)}</h3>
@@ -212,6 +241,84 @@ function renderNotes(notes) {
             </div>
         </div>
     `).join('');
+
+    // Adicionar eventos de drag and drop
+    setupDragAndDrop();
+}
+
+// Função para configurar drag and drop
+function setupDragAndDrop() {
+    const noteCards = document.querySelectorAll('.note-card');
+
+    noteCards.forEach(card => {
+        card.addEventListener('dragstart', handleDragStart);
+        card.addEventListener('dragend', handleDragEnd);
+        card.addEventListener('dragover', handleDragOver);
+        card.addEventListener('drop', handleDrop);
+        card.addEventListener('dragenter', handleDragEnter);
+        card.addEventListener('dragleave', handleDragLeave);
+    });
+}
+
+function handleDragStart(e) {
+    draggedElement = this;
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', this.innerHTML);
+}
+
+function handleDragEnd(e) {
+    this.classList.remove('dragging');
+    
+    // Remover todas as classes de over
+    document.querySelectorAll('.note-card').forEach(card => {
+        card.classList.remove('drag-over');
+    });
+}
+
+function handleDragOver(e) {
+    if (e.preventDefault) {
+        e.preventDefault();
+    }
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+}
+
+function handleDragEnter(e) {
+    if (this !== draggedElement) {
+        this.classList.add('drag-over');
+    }
+}
+
+function handleDragLeave(e) {
+    this.classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+    if (e.stopPropagation) {
+        e.stopPropagation();
+    }
+
+    if (draggedElement !== this) {
+        // Encontrar índices
+        const draggedId = draggedElement.getAttribute('data-note-id');
+        const droppedId = this.getAttribute('data-note-id');
+        
+        const draggedIndex = notes.findIndex(n => n.id === draggedId);
+        const droppedIndex = notes.findIndex(n => n.id === droppedId);
+
+        // Reordenar array
+        const [removed] = notes.splice(draggedIndex, 1);
+        notes.splice(droppedIndex, 0, removed);
+
+        // Atualizar posições no banco
+        updatePositions();
+
+        // Re-renderizar
+        renderNotes(notes);
+    }
+
+    return false;
 }
 
 // Função para escapar HTML (prevenir XSS)
