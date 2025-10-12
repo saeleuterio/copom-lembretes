@@ -208,8 +208,8 @@ function renderNotes(notesData) {
 
     container.innerHTML = notesData.map(note => `
         <div class="note-card" 
-             data-note-id="${note.id}" 
-             draggable="true">
+                data-note-id="${note.id}" 
+                draggable="true">
             <div class="drag-handle">
                 <i class="fas fa-grip-vertical"></i>
             </div>
@@ -220,15 +220,17 @@ function renderNotes(notesData) {
                         <i class="fas fa-user"></i>
                         ${escapeHtml(note.author)}
                     </div>
-                </div>
+                </div>                
                 <div class="note-actions">
                     <button class="action-btn edit-btn" onclick="openEditModal('${note.id}')" title="Editar">
                         <i class="fas fa-edit"></i>
                     </button>
+                    <!-- BOTÕES DE EDITAR E EXCLUIR DESABILITADOS
                     <button class="action-btn delete-btn" onclick="deleteNote('${note.id}')" title="Excluir">
                         <i class="fas fa-trash"></i>
                     </button>
-                </div>
+                    -->
+                </div>                
             </div>
             <div class="note-content">
                 ${escapeHtml(note.content).replace(/\n/g, '<br>')}
